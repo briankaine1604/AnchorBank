@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="AnchorBank.Api/AnchorBank.Api.csproj" />
+  <Project Path="AnchorBank.Application/AnchorBank.Application.csproj" />
+  <Project Path="AnchorBank.Domain.Tests/AnchorBank.Domain.Tests.csproj" />
+  <Project Path="AnchorBank.Domain/AnchorBank.Domain.csproj" />
+  <Project Path="AnchorBank.Infrastructure/AnchorBank.Infrastructure.csproj" />
+</Solution>

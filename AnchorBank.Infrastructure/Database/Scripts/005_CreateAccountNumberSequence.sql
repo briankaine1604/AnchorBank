@@ -1,0 +1,3 @@
+CREATE SEQUENCE AccountNumberSequence
+    START WITH 1001
+    INCREMENT BY 1;
