@@ -1,13 +1,16 @@
+using AnchorBank.Api.Extensions;
 using AnchorBank.Application.Accounts.DTOs;
 using AnchorBank.Application.Accounts.Models;
 using AnchorBank.Application.Services.Interfaces;
 using AnchorBank.Application.Transfers.DTOs;
 using AnchorBank.Application.Transfers.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AnchorBank.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class AccountController : ControllerBase
 {
@@ -24,7 +27,14 @@ public class AccountController : ControllerBase
     public async Task<IActionResult> Create(
         [FromBody] CreateAccountRequest request)
     {
-        var account = await _accountService.CreateAsync(request);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        if (!Enum.IsDefined(request.AccountType))
+            return BadRequest("Account type is not supported.");
+
+        var account = await _accountService.CreateAsync(customerId.Value, request);
 
         if (account is null)
             return NotFound("Customer not found.");
@@ -38,7 +48,11 @@ public class AccountController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var account = await _accountService.GetByIdAsync(id);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var account = await _accountService.GetByIdAsync(id, customerId.Value);
 
         if (account is null)
             return NotFound();
@@ -46,10 +60,14 @@ public class AccountController : ControllerBase
         return Ok(account);
     }
 
-    [HttpGet("customer/{customerId:guid}")]
-    public async Task<IActionResult> GetByCustomerId(Guid customerId)
+    [HttpGet]
+    public async Task<IActionResult> GetMine()
     {
-        var accounts = await _accountService.GetByCustomerIdAsync(customerId);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var accounts = await _accountService.GetByCustomerIdAsync(customerId.Value);
 
         return Ok(accounts);
     }
@@ -59,7 +77,11 @@ public class AccountController : ControllerBase
         Guid accountId,
         [FromBody] AccountMovementRequest request)
     {
-        var result = await _accountService.DepositAsync(accountId, request);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var result = await _accountService.DepositAsync(accountId, customerId.Value, request);
 
         return ToResult(result);
     }
@@ -69,7 +91,11 @@ public class AccountController : ControllerBase
         Guid accountId,
         [FromBody] AccountMovementRequest request)
     {
-        var result = await _accountService.WithdrawAsync(accountId, request);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var result = await _accountService.WithdrawAsync(accountId, customerId.Value, request);
 
         return ToResult(result);
     }
@@ -80,7 +106,11 @@ public class AccountController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await _accountService.GetTransactionsAsync(accountId, page, pageSize);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var result = await _accountService.GetTransactionsAsync(accountId, customerId.Value, page, pageSize);
 
         if (result is null)
             return NotFound("Account not found.");
@@ -91,7 +121,11 @@ public class AccountController : ControllerBase
     [HttpGet("{accountId:guid}/balance")]
     public async Task<IActionResult> GetBalance(Guid accountId)
     {
-        var balance = await _accountService.GetBalanceAsync(accountId);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var balance = await _accountService.GetBalanceAsync(accountId, customerId.Value);
 
         if (balance is null)
             return NotFound("Account not found.");
@@ -104,7 +138,11 @@ public class AccountController : ControllerBase
         Guid sourceAccountId,
         [FromBody] TransferRequest request)
     {
-        var result = await _transferService.TransferAsync(sourceAccountId, request);
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var result = await _transferService.TransferAsync(sourceAccountId, customerId.Value, request);
 
         return result.Outcome switch
         {

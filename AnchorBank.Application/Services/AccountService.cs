@@ -31,10 +31,10 @@ public class AccountService : IAccountService
         _transactionRepository = transactionRepository;
     }
 
-    public async Task<Account?> CreateAsync(CreateAccountRequest request)
+    public async Task<Account?> CreateAsync(Guid customerId, CreateAccountRequest request)
     {
        
-        var customer = await _customerRepository.GetByIdAsync(request.CustomerId);
+        var customer = await _customerRepository.GetByIdAsync(customerId);
 
         if (customer is null)
             return null;
@@ -49,7 +49,7 @@ public class AccountService : IAccountService
         // Create the domain entity.
         var account = new Account(
             accountNumber,
-            request.CustomerId,
+            customerId,
             request.AccountType);
 
         // Persist it.
@@ -58,9 +58,9 @@ public class AccountService : IAccountService
         return account;
     }
 
-    public Task<Account?> GetByIdAsync(Guid id)
+    public Task<Account?> GetByIdAsync(Guid id, Guid customerId)
     {
-        return _accountRepository.GetByIdAsync(id);
+        return _accountRepository.GetByIdAsync(id, customerId);
     }
 
     public Task<IEnumerable<Account>> GetByCustomerIdAsync(Guid customerId)
@@ -68,43 +68,55 @@ public class AccountService : IAccountService
         return _accountRepository.GetByCustomerIdAsync(customerId);
     }
 
-    public Task<AccountMovementResult> DepositAsync(Guid accountId, AccountMovementRequest request)
+    public Task<AccountMovementResult> DepositAsync(
+        Guid accountId,
+        Guid customerId,
+        AccountMovementRequest request)
     {
         if (request.Amount <= 0)
             return Task.FromResult(new AccountMovementResult(AccountMovementOutcome.InvalidAmount));
 
         return _accountRepository.ApplyMovementAsync(
             accountId,
+            customerId,
             request.Amount,
             TransactionType.Credit,
             TransactionCategory.Deposit,
             request.Description);
     }
 
-    public Task<AccountMovementResult> WithdrawAsync(Guid accountId, AccountMovementRequest request)
+    public Task<AccountMovementResult> WithdrawAsync(
+        Guid accountId,
+        Guid customerId,
+        AccountMovementRequest request)
     {
         if (request.Amount <= 0)
             return Task.FromResult(new AccountMovementResult(AccountMovementOutcome.InvalidAmount));
 
         return _accountRepository.ApplyMovementAsync(
             accountId,
+            customerId,
             request.Amount,
             TransactionType.Debit,
             TransactionCategory.Withdrawal,
             request.Description);
     }
 
-    public Task<TransactionPage?> GetTransactionsAsync(Guid accountId, int page, int pageSize)
+    public Task<TransactionPage?> GetTransactionsAsync(
+        Guid accountId,
+        Guid customerId,
+        int page,
+        int pageSize)
     {
         page = page < 1 ? 1 : page;
         pageSize = pageSize < 1 ? DefaultPageSize : Math.Min(pageSize, MaxPageSize);
 
-        return _transactionRepository.GetPageByAccountIdAsync(accountId, page, pageSize);
+        return _transactionRepository.GetPageByAccountIdAsync(accountId, customerId, page, pageSize);
     }
 
-    public async Task<AccountBalanceResponse?> GetBalanceAsync(Guid accountId)
+    public async Task<AccountBalanceResponse?> GetBalanceAsync(Guid accountId, Guid customerId)
     {
-        var account = await _accountRepository.GetByIdAsync(accountId);
+        var account = await _accountRepository.GetByIdAsync(accountId, customerId);
 
         if (account is null)
             return null;

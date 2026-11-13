@@ -14,13 +14,17 @@ public class TransferService : ITransferService
         _transferRepository = transferRepository;
     }
 
-    public Task<TransferResult> TransferAsync(Guid sourceAccountId, TransferRequest request)
+    public Task<TransferResult> TransferAsync(
+        Guid sourceAccountId,
+        Guid customerId,
+        TransferRequest request)
     {
         if (request.Amount <= 0)
             return Task.FromResult(new TransferResult(TransferOutcome.InvalidAmount));
 
         return _transferRepository.TransferAsync(
             sourceAccountId,
+            customerId,
             request.DestinationAccountNumber,
             request.Amount,
             request.Description);

@@ -1,5 +1,29 @@
 @AnchorBank.Api_HostAddress = http://localhost:5002
 @AccountId = 00000000-0000-0000-0000-000000000000
+@token = paste-the-accessToken-from-login-here
+
+POST {{AnchorBank.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Ada",
+  "lastName": "Lovelace",
+  "email": "ada.secure@example.com",
+  "phoneNumber": "08011112222",
+  "password": "correct horse battery staple"
+}
+
+###
+
+POST {{AnchorBank.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ada.secure@example.com",
+  "password": "correct horse battery staple"
+}
+
+###
 
 GET {{AnchorBank.Api_HostAddress}}/weatherforecast/
 Accept: application/json
@@ -8,6 +32,7 @@ Accept: application/json
 
 POST {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/deposit
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "amount": 150.00,
@@ -18,6 +43,7 @@ Content-Type: application/json
 
 POST {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/withdraw
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "amount": 50.00,
@@ -28,16 +54,19 @@ Content-Type: application/json
 
 GET {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/transactions?page=1&pageSize=20
 Accept: application/json
+Authorization: Bearer {{token}}
 
 ###
 
 GET {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/balance
 Accept: application/json
+Authorization: Bearer {{token}}
 
 ###
 
 POST {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/transfers
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "destinationAccountNumber": "0000001002",

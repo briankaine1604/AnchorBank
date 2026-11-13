@@ -4,7 +4,9 @@ namespace AnchorBank.Application.Repositories.Interfaces;
 
 public interface ICustomerRepository
 {
-    Task CreateAsync(Customer customer);
+    Task<bool> TryCreateAsync(Customer customer);
 
     Task<Customer?> GetByIdAsync(Guid id);
+
+    Task<Customer?> GetByEmailAsync(string email);
 }

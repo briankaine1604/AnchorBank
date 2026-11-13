@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="AnchorBank.Api/AnchorBank.Api.csproj" />
+  <Project Path="AnchorBank.Api.Tests/AnchorBank.Api.Tests.csproj" />
   <Project Path="AnchorBank.Application/AnchorBank.Application.csproj" />
   <Project Path="AnchorBank.Application.Tests/AnchorBank.Application.Tests.csproj" />
   <Project Path="AnchorBank.Domain.Tests/AnchorBank.Domain.Tests.csproj" />

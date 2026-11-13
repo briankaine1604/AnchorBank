@@ -21,8 +21,10 @@ public class TransferRepositoryTests
         var sourceId = await _database.CreateAccountAsync(balance: 1000m);
         var destinationId = await _database.CreateAccountAsync(balance: 500m);
         var destinationNumber = await _database.GetAccountNumberAsync(destinationId);
+        var sourceCustomerId = await _database.GetCustomerIdAsync(sourceId);
 
-        var result = await NewRepository().TransferAsync(sourceId, destinationNumber, 200m, "Personal transfer");
+        var result = await NewRepository().TransferAsync(
+            sourceId, sourceCustomerId, destinationNumber, 200m, "Personal transfer");
 
         Assert.Equal(TransferOutcome.Success, result.Outcome);
         Assert.Equal(800m, await _database.GetBalanceAsync(sourceId));
@@ -46,8 +48,10 @@ public class TransferRepositoryTests
         var sourceId = await _database.CreateAccountAsync(balance: 1000m);
         var destinationId = await _database.CreateAccountAsync(balance: 500m);
         var destinationNumber = await _database.GetAccountNumberAsync(destinationId);
+        var sourceCustomerId = await _database.GetCustomerIdAsync(sourceId);
 
-        var result = await NewRepository().TransferAsync(sourceId, destinationNumber, 1000.01m, null);
+        var result = await NewRepository().TransferAsync(
+            sourceId, sourceCustomerId, destinationNumber, 1000.01m, null);
 
         Assert.Equal(TransferOutcome.InsufficientFunds, result.Outcome);
         Assert.Equal(1000m, await _database.GetBalanceAsync(sourceId));

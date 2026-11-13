@@ -12,12 +12,15 @@
 
         public string PhoneNumber { get; private set; }
 
-        public Customer(string firstName, string lastName, string email, string phoneNumber)
-            : this(Guid.NewGuid(), firstName, lastName, email, phoneNumber)
+        public string? PasswordHash { get; private set; }
+
+        public Customer(string firstName, string lastName, string email, string phoneNumber, string passwordHash)
+            : this(Guid.NewGuid(), firstName, lastName, email, phoneNumber, RequireHash(passwordHash))
         {
         }
 
-        public Customer(Guid id, string firstName, string lastName, string email, string phoneNumber)
+        // passwordHash is null only for customers registered before passwords were stored.
+        public Customer(Guid id, string firstName, string lastName, string email, string phoneNumber, string? passwordHash)
         {
             if (id == Guid.Empty)
             {
@@ -46,6 +49,17 @@
             LastName = lastName.Trim();
             Email = email.Trim();
             PhoneNumber = phoneNumber.Trim();
+            PasswordHash = passwordHash;
+        }
+
+        private static string RequireHash(string passwordHash)
+        {
+            if (string.IsNullOrWhiteSpace(passwordHash))
+            {
+                throw new ArgumentException("Password hash must be provided", nameof(passwordHash));
+            }
+
+            return passwordHash;
         }
     }
 
