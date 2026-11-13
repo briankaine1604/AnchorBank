@@ -1,9 +1,8 @@
-using AnchorBank.Domain.Entities;
+using AnchorBank.Application.Transactions.Models;
 
 namespace AnchorBank.Application.Repositories.Interfaces;
 
 public interface ITransactionRepository
 {
-    Task CreateAsync(Transaction transaction);
-    Task<IEnumerable<Transaction>> GetByAccountIdAsync(Guid accountId);
+    Task<TransactionPage?> GetPageByAccountIdAsync(Guid accountId, int page, int pageSize);
 }
