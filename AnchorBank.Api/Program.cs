@@ -15,11 +15,21 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<SqlConnectionFactory>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ITransferRepository, TransferRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<ITransferService, TransferService>();
 
 
 var app = builder.Build();
+
+// Unhandled exceptions (for example SQL errors) must not reach clients.
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await context.Response.WriteAsync("The operation could not be completed.");
+}));
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

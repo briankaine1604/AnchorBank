@@ -52,5 +52,10 @@ namespace AnchorBank.Domain.Entities
             Amount = amount;
             TransferType = transferType;
         }
+
+        public void Complete()
+        {
+            Status = TransferStatus.Completed;
+        }
     }
 }

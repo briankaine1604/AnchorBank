@@ -1,6 +1,47 @@
 @AnchorBank.Api_HostAddress = http://localhost:5002
+@AccountId = 00000000-0000-0000-0000-000000000000
 
 GET {{AnchorBank.Api_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+POST {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/deposit
+Content-Type: application/json
+
+{
+  "amount": 150.00,
+  "description": "cash deposit"
+}
+
+###
+
+POST {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/withdraw
+Content-Type: application/json
+
+{
+  "amount": 50.00,
+  "description": "atm withdrawal"
+}
+
+###
+
+GET {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/transactions?page=1&pageSize=20
+Accept: application/json
+
+###
+
+GET {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/balance
+Accept: application/json
+
+###
+
+POST {{AnchorBank.Api_HostAddress}}/api/account/{{AccountId}}/transfers
+Content-Type: application/json
+
+{
+  "destinationAccountNumber": "0000001002",
+  "amount": 5000.00,
+  "description": "Personal transfer"
+}
+
