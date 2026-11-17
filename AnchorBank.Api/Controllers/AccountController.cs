@@ -1,9 +1,13 @@
 using AnchorBank.Api.Extensions;
 using AnchorBank.Application.Accounts.DTOs;
 using AnchorBank.Application.Accounts.Models;
+using AnchorBank.Application.Airtime;
+using AnchorBank.Application.Airtime.DTOs;
+using AnchorBank.Application.Airtime.Models;
 using AnchorBank.Application.Services.Interfaces;
 using AnchorBank.Application.Transfers.DTOs;
 using AnchorBank.Application.Transfers.Models;
+using AnchorBank.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,10 +21,14 @@ public class AccountController : ControllerBase
     private readonly IAccountService _accountService;
     private readonly ITransferService _transferService;
 
-    public AccountController(IAccountService accountService, ITransferService transferService)
+    private readonly IAirtimeService _airtimeService;
+
+    public AccountController(IAccountService accountService, ITransferService transferService, IAirtimeService airtimeService)
     {
         _accountService = accountService;
         _transferService = transferService;
+        _airtimeService = airtimeService;
+        
     }
 
     [HttpPost]
@@ -169,6 +177,45 @@ public class AccountController : ControllerBase
             AccountMovementOutcome.AccountNotFound => NotFound("Account not found."),
             AccountMovementOutcome.AccountInactive => Conflict("Account is not active."),
             AccountMovementOutcome.InsufficientFunds => Conflict("Insufficient funds."),
+            _ => BadRequest("Amount must be greater than zero.")
+        };
+    }
+
+    [HttpPost("{accountId:guid}/airtime")]
+    public async Task<IActionResult> BuyAirtime(Guid accountId, [FromBody] BuyAirtimeRequest request)
+    {
+        var customerId = User.GetCustomerId();
+        if (customerId is null)
+            return Unauthorized();
+
+        var result = await _airtimeService.BuyAsync(accountId, customerId.Value, request);
+
+        return result.Outcome switch
+        {
+            BuyAirtimeOutcome.Success => result.Status switch
+            {
+                AirtimePurchaseStatus.Success => Ok(new
+                { purchaseId = result.PurchaseId, status = "Success", balance = result.Balance }),
+                AirtimePurchaseStatus.Refunded => UnprocessableEntity(new
+                {
+                    purchaseId = result.PurchaseId,
+                    status = "Refunded",
+                    balance = result.Balance,
+                    message = "The purchase failed and your money has been refunded."
+                }),
+                _ => Accepted(new
+                {
+                    purchaseId = result.PurchaseId,
+                    status = "Processing",
+                    balance = result.Balance,
+                    message = "Your purchase is being processed."
+                })
+            },
+            BuyAirtimeOutcome.AccountNotFound => NotFound("Account not found."),
+            BuyAirtimeOutcome.AccountInactive => Conflict("Account is not active."),
+            BuyAirtimeOutcome.InsufficientFunds => Conflict("Insufficient funds."),
+            BuyAirtimeOutcome.InvalidPhoneNumber => BadRequest("Phone number must be 11 digits starting with 0."),
+            BuyAirtimeOutcome.InvalidNetwork => BadRequest("Network is not supported."),
             _ => BadRequest("Amount must be greater than zero.")
         };
     }

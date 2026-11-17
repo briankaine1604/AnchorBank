@@ -61,8 +61,6 @@ public class TransferRepository : ITransferRepository
             new { SourceAccountId = sourceAccountId, DestinationId = destinationId.Value },
             dbTransaction)).ToDictionary(account => account.Id);
 
-        // Ownership is checked against the row we just locked inside this transaction,
-        // so it cannot go stale; someone else's account looks missing.
         if (!accounts.TryGetValue(sourceAccountId, out var source) || source.CustomerId != customerId)
         {
             dbTransaction.Rollback();

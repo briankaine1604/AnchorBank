@@ -1,5 +1,4 @@
-using System.Text;
-using System.Threading.RateLimiting;
+using AnchorBank.Application.Airtime;
 using AnchorBank.Application.Repositories.Interfaces;
 using AnchorBank.Application.Security;
 using AnchorBank.Application.Services;
@@ -7,10 +6,13 @@ using AnchorBank.Application.Services.Interfaces;
 using AnchorBank.Infrastructure.Database;
 using AnchorBank.Infrastructure.Repositories;
 using AnchorBank.Infrastructure.Security;
+using AnchorBank.Infrastructure.Vtpass;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Text;
+using System.Threading.RateLimiting;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -68,6 +70,19 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ITransferService, TransferService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAirtimePurchaseRepository, AirtimePurchaseRepository>();
+builder.Services.AddScoped<IAirtimeService, AirtimeService>();
+builder.Services.Configure<VtpassOptions>(
+    builder.Configuration.GetSection(VtpassOptions.SectionName));
+
+builder.Services.AddHttpClient<IAirtimeProvider, VtpassService>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<VtpassOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+    client.DefaultRequestHeaders.Add("api-key", options.ApiKey);
+    client.DefaultRequestHeaders.Add("secret-key", options.SecretKey);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
