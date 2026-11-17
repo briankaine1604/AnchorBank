@@ -1,8 +1,9 @@
 # AnchorBank
 
-A banking API I'm building to get properly comfortable with ASP.NET Core. Customers register and
-log in, open accounts, deposit, withdraw, transfer between accounts, and buy airtime through
-VTpass. I wrote every layer by hand instead of letting Visual Studio scaffold it.
+A banking API covering accounts, money movement and airtime. Customers register and log in, open
+accounts, deposit, withdraw, transfer between accounts, and buy airtime through VTpass.
+
+Built to learn the shape of a real API, and to be able to explain every part of it.
 
 .NET 10, ASP.NET Core controllers, SQL Server with Dapper, JWT auth, PBKDF2 password hashing,
 xUnit for the tests. No EF Core.
@@ -91,7 +92,8 @@ dotnet test AnchorBank.slnx
 ```
 
 Domain tests cover the entity rules, including which airtime statuses are allowed to follow which.
-Application tests use hand written fakes, since there's no mocking library in the solution.
+Application tests use small fakes written into the test files, since there's no mocking library in
+the solution.
 Infrastructure tests hit a real SQL Server: the fixture creates and drops AnchorBankTests from the
 scripts, so a new script gets picked up by itself. The API tests boot the real pipeline with
 WebApplicationFactory and mint tokens directly, which keeps the login rate limiter out of the way.
