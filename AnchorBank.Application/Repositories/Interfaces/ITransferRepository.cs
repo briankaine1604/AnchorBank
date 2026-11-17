@@ -6,6 +6,7 @@ public interface ITransferRepository
 {
     Task<TransferResult> TransferAsync(
         Guid sourceAccountId,
+        Guid customerId,
         string destinationAccountNumber,
         decimal amount,
         string? description);

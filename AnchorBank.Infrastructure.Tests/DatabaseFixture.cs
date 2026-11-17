@@ -100,6 +100,21 @@ public sealed class DatabaseFixture : IAsyncLifetime
         return accountId;
     }
 
+    public async Task<Guid> InsertLegacyCustomerAsync()
+    {
+        var customerId = Guid.NewGuid();
+
+        await using var connection = new SqlConnection(ConnectionString);
+        await connection.ExecuteAsync(
+            """
+            INSERT INTO Customers (Id, FirstName, LastName, Email, PhoneNumber, PasswordHash)
+            VALUES (@Id, 'Legacy', 'Customer', @Email, '0800000000', NULL);
+            """,
+            new { Id = customerId, Email = $"{customerId}@legacy.example.com" });
+
+        return customerId;
+    }
+
     public async Task<decimal> GetBalanceAsync(Guid accountId)
     {
         await using var connection = new SqlConnection(ConnectionString);
@@ -107,11 +122,19 @@ public sealed class DatabaseFixture : IAsyncLifetime
             "SELECT Balance FROM Accounts WHERE Id = @Id;", new { Id = accountId });
     }
 
+    public async Task<Guid> GetCustomerIdAsync(Guid accountId)
+    {
+        await using var connection = new SqlConnection(ConnectionString);
+        return await connection.ExecuteScalarAsync<Guid>(
+            "SELECT CustomerId FROM Accounts WHERE Id = @Id;", new { Id = accountId });
+    }
+
     public async Task<string> GetAccountNumberAsync(Guid accountId)
     {
         await using var connection = new SqlConnection(ConnectionString);
         return await connection.ExecuteScalarAsync<string>(
-            "SELECT AccountNumber FROM Accounts WHERE Id = @Id;", new { Id = accountId });
+            "SELECT AccountNumber FROM Accounts WHERE Id = @Id;", new { Id = accountId })
+            ?? throw new InvalidOperationException("Account not found: " + accountId);
     }
 
     public async Task<IReadOnlyList<TransferRow>> GetTransfersAsync(Guid sourceAccountId)

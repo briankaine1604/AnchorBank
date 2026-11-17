@@ -30,7 +30,7 @@ public class AccountRepository : IAccountRepository
         await connection.ExecuteAsync(sql, account);
     }
 
-    public async Task<Account?> GetByIdAsync(Guid id)
+    public async Task<Account?> GetByIdAsync(Guid id, Guid customerId)
     {
         using var connection = _connectionFactory.CreateConnection();
 
@@ -38,11 +38,11 @@ public class AccountRepository : IAccountRepository
             SELECT Id, AccountNumber, Balance, AccountType,
                    AccountStatus, CustomerId, CreatedAt
             FROM Accounts
-            WHERE Id = @Id;
+            WHERE Id = @Id AND CustomerId = @CustomerId;
             """;
 
         return await connection.QuerySingleOrDefaultAsync<Account>(
-            sql, new { Id = id });
+            sql, new { Id = id, CustomerId = customerId });
     }
 
     public async Task<IEnumerable<Account>> GetByCustomerIdAsync(Guid customerId)
@@ -73,6 +73,7 @@ public class AccountRepository : IAccountRepository
 
     public async Task<AccountMovementResult> ApplyMovementAsync(
         Guid accountId,
+        Guid customerId,
         decimal amount,
         TransactionType transactionType,
         TransactionCategory transactionCategory,
@@ -83,16 +84,17 @@ public class AccountRepository : IAccountRepository
         using var dbTransaction = connection.BeginTransaction();
 
         // UPDLOCK keeps this row locked until commit, so the balance read here
-        // cannot change before the update below runs.
+        // cannot change before the update below runs. The CustomerId predicate
+        // makes someone else's account indistinguishable from a missing one.
         const string selectSql = """
             SELECT Id, AccountNumber, Balance, AccountType,
                    AccountStatus, CustomerId, CreatedAt
             FROM Accounts WITH (UPDLOCK, ROWLOCK)
-            WHERE Id = @Id;
+            WHERE Id = @Id AND CustomerId = @CustomerId;
             """;
 
         var account = await connection.QuerySingleOrDefaultAsync<Account>(
-            selectSql, new { Id = accountId }, dbTransaction);
+            selectSql, new { Id = accountId, CustomerId = customerId }, dbTransaction);
 
         if (account is null)
         {

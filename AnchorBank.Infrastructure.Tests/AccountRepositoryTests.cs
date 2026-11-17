@@ -19,9 +19,10 @@ public class AccountRepositoryTests
     public async Task Deposit_UpdatesBalanceAndRecordsTransaction()
     {
         var accountId = await _database.CreateAccountAsync(balance: 100m);
+        var customerId = await _database.GetCustomerIdAsync(accountId);
 
         var result = await NewRepository().ApplyMovementAsync(
-            accountId, 50m, TransactionType.Credit, TransactionCategory.Deposit, "cash deposit");
+            accountId, customerId, 50m, TransactionType.Credit, TransactionCategory.Deposit, "cash deposit");
 
         Assert.Equal(AccountMovementOutcome.Success, result.Outcome);
         Assert.Equal(150m, await _database.GetBalanceAsync(accountId));
@@ -36,9 +37,10 @@ public class AccountRepositoryTests
     public async Task Withdrawal_UpdatesBalanceAndRecordsTransaction()
     {
         var accountId = await _database.CreateAccountAsync(balance: 100m);
+        var customerId = await _database.GetCustomerIdAsync(accountId);
 
         var result = await NewRepository().ApplyMovementAsync(
-            accountId, 40m, TransactionType.Debit, TransactionCategory.Withdrawal, "atm");
+            accountId, customerId, 40m, TransactionType.Debit, TransactionCategory.Withdrawal, "atm");
 
         Assert.Equal(AccountMovementOutcome.Success, result.Outcome);
         Assert.Equal(60m, await _database.GetBalanceAsync(accountId));

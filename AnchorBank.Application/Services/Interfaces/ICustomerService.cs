@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using AnchorBank.Application.Customers.DTOs;
-using AnchorBank.Domain.Entities;
+using AnchorBank.Application.Customers.Models;
 
-namespace AnchorBank.Application.Services.Interfaces
+namespace AnchorBank.Application.Services.Interfaces;
+
+public interface ICustomerService
 {
-    public interface ICustomerService
-    {
-        Task<Customer> CreateAsync(CreateCustomerRequest request);
+    Task<RegistrationResult> CreateAsync(RegisterCustomerRequest request);
 
-        Task<Customer?> GetByIdAsync(Guid id);
-    }
+    Task<CustomerResponse?> GetByIdAsync(Guid id);
 }

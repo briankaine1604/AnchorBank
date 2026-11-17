@@ -15,12 +15,17 @@ public class TransactionRepository : ITransactionRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<TransactionPage?> GetPageByAccountIdAsync(Guid accountId, int page, int pageSize)
+    public async Task<TransactionPage?> GetPageByAccountIdAsync(
+        Guid accountId,
+        Guid customerId,
+        int page,
+        int pageSize)
     {
         using var connection = _connectionFactory.CreateConnection();
 
         const string sql = """
-            SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM Accounts WHERE Id = @AccountId)
+            SELECT CAST(CASE WHEN EXISTS (SELECT 1 FROM Accounts
+                                          WHERE Id = @AccountId AND CustomerId = @CustomerId)
                              THEN 1 ELSE 0 END AS BIT) AS AccountExists;
 
             SELECT COUNT(*) AS TotalCount
@@ -38,6 +43,7 @@ public class TransactionRepository : ITransactionRepository
         using var results = await connection.QueryMultipleAsync(sql, new
         {
             AccountId = accountId,
+            CustomerId = customerId,
             Offset = (page - 1) * pageSize,
             PageSize = pageSize
         });

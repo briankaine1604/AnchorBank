@@ -9,11 +9,5 @@ namespace AnchorBank.Domain.Enums
         Internal =1,
         External =2
     }
-
-    public enum TransferStatus
-    {
-        Pending = 1,
-        Completed = 2,
-        Failed = 3
-    }
+   
 }

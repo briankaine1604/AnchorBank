@@ -12,12 +12,13 @@ namespace AnchorBank.Domain.Tests
             "  Brian  ",
             "  Ikeogu  ",
             "  brian@example.com  ",
-            "  +2348012345678  ");
+            "  +234****5678  ",
+            "PBKDF2-SHA256$600000$c2FsdA==$aGFzaA==");
 
             Assert.Equal("Brian", customer.FirstName);
             Assert.Equal("Ikeogu", customer.LastName);
             Assert.Equal("brian@example.com", customer.Email);
-            Assert.Equal("+2348012345678", customer.PhoneNumber);
+            Assert.Equal("+234****5678", customer.PhoneNumber);
 
         }
 
@@ -28,11 +29,18 @@ namespace AnchorBank.Domain.Tests
             string firstName = "";
             string lastName = "Ikeogu";
             string email = "brian@example.com";
-            string phoneNumber = "+2348012345678";
+            string phoneNumber = "+234****5678";
 
             // Act & Assert
             Assert.Throws<ArgumentException>(() =>
-                new Customer(firstName, lastName, email, phoneNumber));
+                new Customer(firstName, lastName, email, phoneNumber, "PBKDF2-SHA256$600000$c2FsdA==$aGFzaA=="));
+        }
+
+        [Fact]
+        public void RejectsMissingPasswordHash()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                new Customer("Brian", "Ikeogu", "brian@example.com", "+234****5678", ""));
         }
     }
 }

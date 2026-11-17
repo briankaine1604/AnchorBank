@@ -17,7 +17,7 @@ public class AccountServiceTests
         var repository = new FakeAccountRepository { Result = new(AccountMovementOutcome.Success, 150m) };
         var service = NewService(repository);
 
-        var result = await service.DepositAsync(Guid.NewGuid(), new AccountMovementRequest(50m, "cash"));
+        var result = await service.DepositAsync(Guid.NewGuid(), Guid.NewGuid(), new AccountMovementRequest(50m, "cash"));
 
         Assert.Equal(AccountMovementOutcome.Success, result.Outcome);
         Assert.Equal(150m, result.Balance);
@@ -33,7 +33,7 @@ public class AccountServiceTests
         var repository = new FakeAccountRepository();
         var service = NewService(repository);
 
-        var result = await service.DepositAsync(Guid.NewGuid(), new AccountMovementRequest(amount, null));
+        var result = await service.DepositAsync(Guid.NewGuid(), Guid.NewGuid(), new AccountMovementRequest(amount, null));
 
         Assert.Equal(AccountMovementOutcome.InvalidAmount, result.Outcome);
         Assert.Equal(0, repository.CallCount);
@@ -45,7 +45,7 @@ public class AccountServiceTests
         var account = NewAccount(balance: 25000.00m);
         var service = NewService(new FakeAccountRepository { AccountToReturn = account });
 
-        var result = await service.GetBalanceAsync(account.Id);
+        var result = await service.GetBalanceAsync(account.Id, account.CustomerId);
 
         Assert.NotNull(result);
         Assert.Equal(25000.00m, result.Balance);
@@ -79,6 +79,7 @@ public class AccountServiceTests
 
         public Task<AccountMovementResult> ApplyMovementAsync(
             Guid accountId,
+            Guid customerId,
             decimal amount,
             TransactionType transactionType,
             TransactionCategory transactionCategory,
@@ -90,7 +91,7 @@ public class AccountServiceTests
             return Task.FromResult(Result);
         }
 
-        public Task<Account?> GetByIdAsync(Guid id) => Task.FromResult(AccountToReturn);
+        public Task<Account?> GetByIdAsync(Guid id, Guid customerId) => Task.FromResult(AccountToReturn);
 
         public Task CreateAsync(Account account) => throw new NotSupportedException();
 
@@ -101,14 +102,16 @@ public class AccountServiceTests
 
     private sealed class FakeTransactionRepository : ITransactionRepository
     {
-        public Task<TransactionPage?> GetPageByAccountIdAsync(Guid accountId, int page, int pageSize)
+        public Task<TransactionPage?> GetPageByAccountIdAsync(Guid accountId, Guid customerId, int page, int pageSize)
             => throw new NotSupportedException();
     }
 
     private sealed class FakeCustomerRepository : ICustomerRepository
     {
-        public Task CreateAsync(Customer customer) => throw new NotSupportedException();
+        public Task<bool> TryCreateAsync(Customer customer) => throw new NotSupportedException();
 
         public Task<Customer?> GetByIdAsync(Guid id) => throw new NotSupportedException();
+
+        public Task<Customer?> GetByEmailAsync(string email) => throw new NotSupportedException();
     }
 }

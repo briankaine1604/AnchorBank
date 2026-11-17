@@ -5,5 +5,5 @@ namespace AnchorBank.Application.Services.Interfaces;
 
 public interface ITransferService
 {
-    Task<TransferResult> TransferAsync(Guid sourceAccountId, TransferRequest request);
+    Task<TransferResult> TransferAsync(Guid sourceAccountId, Guid customerId, TransferRequest request);
 }

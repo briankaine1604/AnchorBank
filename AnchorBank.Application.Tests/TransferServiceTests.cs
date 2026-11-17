@@ -15,7 +15,7 @@ public class TransferServiceTests
         var sourceAccountId = Guid.NewGuid();
 
         await service.TransferAsync(
-            sourceAccountId, new TransferRequest("0000001002", 5000.00m, "Personal transfer"));
+            sourceAccountId, Guid.NewGuid(), new TransferRequest("0000001002", 5000.00m, "Personal transfer"));
 
         Assert.Equal(sourceAccountId, repository.SourceAccountId);
         Assert.Equal("0000001002", repository.DestinationAccountNumber);
@@ -31,6 +31,7 @@ public class TransferServiceTests
 
         public Task<TransferResult> TransferAsync(
             Guid sourceAccountId,
+            Guid customerId,
             string destinationAccountNumber,
             decimal amount,
             string? description)

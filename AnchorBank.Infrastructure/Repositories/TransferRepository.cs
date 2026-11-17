@@ -18,6 +18,7 @@ public class TransferRepository : ITransferRepository
 
     public async Task<TransferResult> TransferAsync(
         Guid sourceAccountId,
+        Guid customerId,
         string destinationAccountNumber,
         decimal amount,
         string? description)
@@ -60,7 +61,7 @@ public class TransferRepository : ITransferRepository
             new { SourceAccountId = sourceAccountId, DestinationId = destinationId.Value },
             dbTransaction)).ToDictionary(account => account.Id);
 
-        if (!accounts.TryGetValue(sourceAccountId, out var source))
+        if (!accounts.TryGetValue(sourceAccountId, out var source) || source.CustomerId != customerId)
         {
             dbTransaction.Rollback();
             return new TransferResult(TransferOutcome.SourceAccountNotFound);
