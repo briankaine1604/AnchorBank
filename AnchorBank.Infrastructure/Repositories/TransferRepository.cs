@@ -16,12 +16,15 @@ public class TransferRepository : ITransferRepository
         _connectionFactory = connectionFactory;
     }
 
+    private sealed record ExistingTransfer(Guid Id, string DestinationAccountNumber, decimal Amount);
+
     public async Task<TransferResult> TransferAsync(
         Guid sourceAccountId,
         Guid customerId,
         string destinationAccountNumber,
         decimal amount,
-        string? description)
+        string? description,
+        string clientReference)
     {
         using var connection = _connectionFactory.CreateConnection();
         connection.Open();
@@ -73,6 +76,25 @@ public class TransferRepository : ITransferRepository
             return new TransferResult(TransferOutcome.DestinationAccountNotFound);
         }
 
+        const string existingSql = """
+            SELECT Id, DestinationAccountNumber, Amount
+            FROM Transfers
+            WHERE SourceAccountId = @SourceAccountId AND ClientReference = @ClientReference;
+            """;
+
+        var existing = await connection.QuerySingleOrDefaultAsync<ExistingTransfer>(
+            existingSql,
+            new { SourceAccountId = sourceAccountId, ClientReference = clientReference },
+            dbTransaction);
+
+        if (existing is not null)
+        {
+            dbTransaction.Rollback();
+            return existing.Amount == amount && existing.DestinationAccountNumber == destination.AccountNumber
+                ? new TransferResult(TransferOutcome.Success, existing.Id, source.Balance, destination.Balance)
+                : new TransferResult(TransferOutcome.ClientReferenceReused);
+        }
+
         if (source.AccountStatus != AccountStatus.Active || destination.AccountStatus != AccountStatus.Active)
         {
             dbTransaction.Rollback();
@@ -98,16 +120,20 @@ public class TransferRepository : ITransferRepository
         await connection.ExecuteAsync(updateSql, new { destination.Balance, destination.Id }, dbTransaction);
 
         var sourceTransaction = new Transaction(
-            source.Id, TransactionType.Debit, TransactionCategory.Transfer, amount, description);
+            source.Id, TransactionType.Debit, TransactionCategory.Transfer, amount, description,
+            clientReference);
 
         var destinationTransaction = new Transaction(
-            destination.Id, TransactionType.Credit, TransactionCategory.Transfer, amount, description);
+            destination.Id, TransactionType.Credit, TransactionCategory.Transfer, amount, description,
+            null);
 
         const string insertTransactionSql = """
             INSERT INTO Transactions
-            (Id, AccountId, TransactionType, TransactionCategory, Amount, Description, CreatedAt)
+            (Id, AccountId, TransactionType, TransactionCategory, Amount, Description, CreatedAt,
+             ClientReference)
             VALUES
-            (@Id, @AccountId, @TransactionType, @TransactionCategory, @Amount, @Description, @CreatedAt);
+            (@Id, @AccountId, @TransactionType, @TransactionCategory, @Amount, @Description, @CreatedAt,
+             @ClientReference);
             """;
 
         await connection.ExecuteAsync(
@@ -120,17 +146,20 @@ public class TransferRepository : ITransferRepository
             destination.AccountNumber,
             string.Empty,
             amount,
-            TransferType.Internal);
+            TransferType.Internal)
+        {
+            ClientReference = clientReference
+        };
 
         transfer.Complete();
 
         const string insertTransferSql = """
             INSERT INTO Transfers
             (Id, SourceAccountId, DestinationAccountNumber, DestinationBankCode,
-             Amount, TransferType, Status, CreatedAt)
+             Amount, TransferType, Status, CreatedAt, ClientReference)
             VALUES
             (@Id, @SourceAccountId, @DestinationAccountNumber, NULLIF(@DestinationBankCode, ''),
-             @Amount, @TransferType, @Status, @CreatedAt);
+             @Amount, @TransferType, @Status, @CreatedAt, @ClientReference);
             """;
 
         await connection.ExecuteAsync(insertTransferSql, transfer, dbTransaction);

@@ -135,7 +135,8 @@ public class AccountRepository : IAccountRepository
             transactionType,
             transactionCategory,
             amount,
-            description);
+            description,
+            null);
 
         const string insertSql = """
             INSERT INTO Transactions

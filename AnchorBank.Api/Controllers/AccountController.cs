@@ -165,6 +165,8 @@ public class AccountController : ControllerBase
             TransferOutcome.SameAccount => BadRequest("Source and destination accounts must differ."),
             TransferOutcome.AccountInactive => Conflict("Account is not active."),
             TransferOutcome.InsufficientFunds => Conflict("Insufficient funds."),
+            TransferOutcome.InvalidClientReference => BadRequest("ClientReference is required (max 40 characters)."),
+            TransferOutcome.ClientReferenceReused => Conflict("This ClientReference was already used with a different request."),
             _ => BadRequest("Amount must be greater than zero.")
         };
     }
@@ -216,6 +218,10 @@ public class AccountController : ControllerBase
             BuyAirtimeOutcome.InsufficientFunds => Conflict("Insufficient funds."),
             BuyAirtimeOutcome.InvalidPhoneNumber => BadRequest("Phone number must be 11 digits starting with 0."),
             BuyAirtimeOutcome.InvalidNetwork => BadRequest("Network is not supported."),
+            BuyAirtimeOutcome.InvalidClientReference => BadRequest(
+                "Client reference must be provided and no longer than 40 characters."),
+            BuyAirtimeOutcome.ClientReferenceReused => Conflict(
+                "Client reference was already used for a different purchase."),
             _ => BadRequest("Amount must be greater than zero.")
         };
     }

@@ -21,6 +21,8 @@ namespace AnchorBank.Domain.Entities
 
         public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
 
+        public string ClientReference { get; init; } = string.Empty;
+
         public Transfer(Guid sourceAccountId, string destinationAccountNumber, string destinationBankCode, decimal amount, TransferType transferType)
         {
             if (sourceAccountId == Guid.Empty)

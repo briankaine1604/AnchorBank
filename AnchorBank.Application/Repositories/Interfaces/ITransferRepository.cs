@@ -9,5 +9,6 @@ public interface ITransferRepository
         Guid customerId,
         string destinationAccountNumber,
         decimal amount,
-        string? description);
+        string? description,
+        string clientReference);
 }

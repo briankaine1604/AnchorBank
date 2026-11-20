@@ -11,7 +11,9 @@ public enum BuyAirtimeOutcome
     InvalidPhoneNumber,
     AccountNotFound,
     AccountInactive,
-    InsufficientFunds
+    InsufficientFunds,
+    InvalidClientReference,
+    ClientReferenceReused
 }
 
 public record BuyAirtimeResult(
@@ -23,4 +25,5 @@ public record BuyAirtimeResult(
 public record BeginAirtimePurchaseResult(
     BuyAirtimeOutcome Outcome,
     AirtimePurchase? Purchase = null,
-    decimal Balance = 0);
+    decimal Balance = 0,
+    bool IsReplay = false);

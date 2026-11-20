@@ -8,7 +8,9 @@ public enum TransferOutcome
     DestinationAccountNotFound,
     SameAccount,
     AccountInactive,
-    InsufficientFunds
+    InsufficientFunds,
+    InvalidClientReference,
+    ClientReferenceReused
 }
 
 public record TransferResult(

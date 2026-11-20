@@ -16,6 +16,8 @@ namespace AnchorBank.Domain.Entities
 
         public string RequestId { get; private set; }
 
+        public string ClientReference { get; private set; }
+
         public AirtimePurchaseStatus Status { get; private set; } = AirtimePurchaseStatus.Pending;
 
         public string? ProviderReference { get; private set; }
@@ -26,7 +28,7 @@ namespace AnchorBank.Domain.Entities
 
         public DateTime? UpdatedAt { get; private set; }
 
-        public AirtimePurchase(Guid accountId, Network network, string phoneNumber, decimal amount, string requestId)
+        public AirtimePurchase(Guid accountId, Network network, string phoneNumber, decimal amount, string requestId, string clientReference)
         {
             if (accountId == Guid.Empty)
             {
@@ -48,12 +50,17 @@ namespace AnchorBank.Domain.Entities
             {
                 throw new ArgumentException("Request ID must be provided", nameof(requestId));
             }
+            if (string.IsNullOrWhiteSpace(clientReference))
+            {
+                throw new ArgumentException("Client reference must be provided", nameof(clientReference));
+            }
 
             AccountId = accountId;
             Network = network;
             PhoneNumber = phoneNumber.Trim();
             Amount = amount;
             RequestId = requestId.Trim();
+            ClientReference = clientReference.Trim();
         }
 
         // Rehydration for the repository; the table constraints already guarantee the rest.
@@ -64,6 +71,7 @@ namespace AnchorBank.Domain.Entities
             string phoneNumber,
             decimal amount,
             string requestId,
+            string clientReference,
             AirtimePurchaseStatus status,
             string? providerReference,
             string? providerMessage,
@@ -85,6 +93,7 @@ namespace AnchorBank.Domain.Entities
             PhoneNumber = phoneNumber;
             Amount = amount;
             RequestId = requestId;
+            ClientReference = clientReference;
             Status = status;
             ProviderReference = providerReference;
             ProviderMessage = providerMessage;
