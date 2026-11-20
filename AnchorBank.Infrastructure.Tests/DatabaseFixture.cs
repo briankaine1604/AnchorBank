@@ -157,7 +157,8 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await using var connection = new SqlConnection(ConnectionString);
         var transactions = await connection.QueryAsync<Transaction>(
             """
-            SELECT Id, AccountId, TransactionType, TransactionCategory, Amount, Description, CreatedAt
+            SELECT Id, AccountId, TransactionType, TransactionCategory, Amount, Description, CreatedAt,
+                   ClientReference
             FROM Transactions
             WHERE AccountId = @AccountId
             ORDER BY CreatedAt;

@@ -23,8 +23,10 @@ public class TransferRepositoryTests
         var destinationNumber = await _database.GetAccountNumberAsync(destinationId);
         var sourceCustomerId = await _database.GetCustomerIdAsync(sourceId);
 
+        var clientReference = Guid.NewGuid().ToString();
+
         var result = await NewRepository().TransferAsync(
-            sourceId, sourceCustomerId, destinationNumber, 200m, "Personal transfer");
+            sourceId, sourceCustomerId, destinationNumber, 200m, "Personal transfer", clientReference);
 
         Assert.Equal(TransferOutcome.Success, result.Outcome);
         Assert.Equal(800m, await _database.GetBalanceAsync(sourceId));
@@ -33,9 +35,11 @@ public class TransferRepositoryTests
         var debit = Assert.Single(await _database.GetTransactionsAsync(sourceId));
         Assert.Equal(TransactionType.Debit, debit.TransactionType);
         Assert.Equal(TransactionCategory.Transfer, debit.TransactionCategory);
+        Assert.Equal(clientReference, debit.ClientReference);
 
         var credit = Assert.Single(await _database.GetTransactionsAsync(destinationId));
         Assert.Equal(TransactionType.Credit, credit.TransactionType);
+        Assert.Null(credit.ClientReference);
 
         var transfer = Assert.Single(await _database.GetTransfersAsync(sourceId));
         Assert.Equal(TransferStatus.Completed, transfer.Status);
@@ -51,7 +55,7 @@ public class TransferRepositoryTests
         var sourceCustomerId = await _database.GetCustomerIdAsync(sourceId);
 
         var result = await NewRepository().TransferAsync(
-            sourceId, sourceCustomerId, destinationNumber, 1000.01m, null);
+            sourceId, sourceCustomerId, destinationNumber, 1000.01m, null, Guid.NewGuid().ToString());
 
         Assert.Equal(TransferOutcome.InsufficientFunds, result.Outcome);
         Assert.Equal(1000m, await _database.GetBalanceAsync(sourceId));

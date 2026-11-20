@@ -15,11 +15,13 @@ public class TransferServiceTests
         var sourceAccountId = Guid.NewGuid();
 
         await service.TransferAsync(
-            sourceAccountId, Guid.NewGuid(), new TransferRequest("0000001002", 5000.00m, "Personal transfer"));
+            sourceAccountId, Guid.NewGuid(),
+            new TransferRequest("0000001002", 5000.00m, "Personal transfer", "transfer-ref-1"));
 
         Assert.Equal(sourceAccountId, repository.SourceAccountId);
         Assert.Equal("0000001002", repository.DestinationAccountNumber);
         Assert.Equal(5000.00m, repository.Amount);
+        Assert.Equal("transfer-ref-1", repository.ClientReference);
     }
 
     private sealed class FakeTransferRepository : ITransferRepository
@@ -28,17 +30,20 @@ public class TransferServiceTests
         public Guid SourceAccountId { get; private set; }
         public string? DestinationAccountNumber { get; private set; }
         public decimal Amount { get; private set; }
+        public string? ClientReference { get; private set; }
 
         public Task<TransferResult> TransferAsync(
             Guid sourceAccountId,
             Guid customerId,
             string destinationAccountNumber,
             decimal amount,
-            string? description)
+            string? description,
+            string clientReference)
         {
             SourceAccountId = sourceAccountId;
             DestinationAccountNumber = destinationAccountNumber;
             Amount = amount;
+            ClientReference = clientReference;
             return Task.FromResult(Result);
         }
     }

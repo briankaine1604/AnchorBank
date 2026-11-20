@@ -107,7 +107,12 @@ public class AccountAuthorizationTests
             $"/api/account/{accountId}/withdraw", new { amount = 100m });
         var transfer = await client.PostAsJsonAsync(
             $"/api/account/{accountId}/transfers",
-            new { destinationAccountNumber = destinationNumber, amount = 100m });
+            new
+            {
+                destinationAccountNumber = destinationNumber,
+                amount = 100m,
+                clientReference = "not-my-account-transfer"
+            });
 
         Assert.Equal(HttpStatusCode.NotFound, deposit.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, withdraw.StatusCode);
@@ -126,7 +131,12 @@ public class AccountAuthorizationTests
 
         var response = await client.PostAsJsonAsync(
             $"/api/account/{sourceId}/transfers",
-            new { destinationAccountNumber = destinationNumber, amount = 200m });
+            new
+            {
+                destinationAccountNumber = destinationNumber,
+                amount = 200m,
+                clientReference = "transfer-to-another-customer"
+            });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(800m, await _fixture.Database.GetBalanceAsync(sourceId));

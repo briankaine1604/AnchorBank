@@ -26,15 +26,26 @@ public class AirtimeService : IAirtimeService
             return new BuyAirtimeResult(BuyAirtimeOutcome.InvalidNetwork);
         if (!PhoneFormat.IsMatch(request.PhoneNumber ?? string.Empty))
             return new BuyAirtimeResult(BuyAirtimeOutcome.InvalidPhoneNumber);
+        // Trimmed once here so the value stored on insert is the value a retry looks up.
+        var clientReference = request.ClientReference?.Trim() ?? string.Empty;
+
+        if (clientReference.Length == 0 || clientReference.Length > 40)
+            return new BuyAirtimeResult(BuyAirtimeOutcome.InvalidClientReference);
 
         var requestId = _provider.GenerateRequestId();
 
         // 1. Debit + record the purchase as Pending.
         var begin = await _repository.BeginAsync(
-            accountId, customerId, request.Network, request.PhoneNumber, request.Amount, requestId);
+            accountId, customerId, request.Network, request.PhoneNumber, request.Amount, requestId,
+            clientReference);
 
         if (begin.Outcome != BuyAirtimeOutcome.Success)
             return new BuyAirtimeResult(begin.Outcome);
+
+        // A retry answered from the stored purchase: report what is already known, call nobody.
+        if (begin.IsReplay)
+            return new BuyAirtimeResult(
+                BuyAirtimeOutcome.Success, begin.Purchase!.Id, begin.Purchase.Status, begin.Balance);
 
         var purchase = begin.Purchase!;
         var balance = begin.Balance;

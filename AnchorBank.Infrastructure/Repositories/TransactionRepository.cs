@@ -33,7 +33,7 @@ public class TransactionRepository : ITransactionRepository
             WHERE AccountId = @AccountId;
 
             SELECT Id, AccountId, TransactionType, TransactionCategory,
-                   Amount, Description, CreatedAt
+                   Amount, Description, CreatedAt, ClientReference
             FROM Transactions
             WHERE AccountId = @AccountId
             ORDER BY CreatedAt DESC, Id DESC

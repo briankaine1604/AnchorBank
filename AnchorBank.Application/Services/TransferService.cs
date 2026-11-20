@@ -22,11 +22,18 @@ public class TransferService : ITransferService
         if (request.Amount <= 0)
             return Task.FromResult(new TransferResult(TransferOutcome.InvalidAmount));
 
+        // Trimmed once here so the value stored on insert is the value a retry looks up.
+        var clientReference = request.ClientReference?.Trim() ?? string.Empty;
+
+        if (clientReference.Length == 0 || clientReference.Length > 40)
+            return Task.FromResult(new TransferResult(TransferOutcome.InvalidClientReference));
+
         return _transferRepository.TransferAsync(
             sourceAccountId,
             customerId,
             request.DestinationAccountNumber,
             request.Amount,
-            request.Description);
+            request.Description,
+            clientReference);
     }
 }

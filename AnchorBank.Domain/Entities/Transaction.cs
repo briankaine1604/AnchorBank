@@ -12,13 +12,16 @@ public class Transaction
     public string? Description { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
+    public string? ClientReference { get; private set; }
+
     // Normal transaction creation
     public Transaction(
         Guid accountId,
         TransactionType transactionType,
         TransactionCategory transactionCategory,
         decimal amount,
-        string? description)
+        string? description,
+        string? clientReference)
         : this(
             Guid.NewGuid(),
             accountId,
@@ -26,7 +29,8 @@ public class Transaction
             transactionCategory,
             amount,
             description,
-            DateTime.UtcNow)
+            DateTime.UtcNow,
+            clientReference)
     {
     }
 
@@ -38,7 +42,8 @@ public class Transaction
         TransactionCategory transactionCategory,
         decimal amount,
         string? description,
-        DateTime createdAt)
+        DateTime createdAt,
+        string? clientReference)
     {
         if (id == Guid.Empty)
             throw new ArgumentException("Transaction ID must be provided", nameof(id));
@@ -64,6 +69,7 @@ public class Transaction
         TransactionCategory = transactionCategory;
         Amount = amount;
         Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+        ClientReference = string.IsNullOrWhiteSpace(clientReference) ? null : clientReference.Trim();
         CreatedAt = createdAt;
     }
 }

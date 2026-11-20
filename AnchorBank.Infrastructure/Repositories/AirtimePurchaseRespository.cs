@@ -33,7 +33,7 @@ public class AirtimePurchaseRepository : IAirtimePurchaseRepository
 
     public async Task<BeginAirtimePurchaseResult> BeginAsync(
         Guid accountId, Guid customerId, Network network,
-        string phoneNumber, decimal amount, string requestId)
+        string phoneNumber, decimal amount, string requestId, string clientReference)
     {
         using var connection = _connectionFactory.CreateConnection();
         connection.Open();
@@ -47,6 +47,34 @@ public class AirtimePurchaseRepository : IAirtimePurchaseRepository
         {
             dbTransaction.Rollback();
             return new BeginAirtimePurchaseResult(BuyAirtimeOutcome.AccountNotFound);
+        }
+
+        // A retry carries the same client reference. This runs before the status and balance
+        // checks so a replay answers with what was already decided, not with a fresh verdict.
+        const string existingPurchaseSql = """
+            SELECT Id, AccountId, Network, PhoneNumber, Amount, RequestId, ClientReference,
+                   Status, ProviderReference, ProviderMessage, CreatedAt, UpdatedAt
+            FROM AirtimePurchases
+            WHERE AccountId = @AccountId AND ClientReference = @ClientReference;
+            """;
+
+        var existing = await connection.QuerySingleOrDefaultAsync<AirtimePurchase>(
+            existingPurchaseSql,
+            new { AccountId = accountId, ClientReference = clientReference },
+            dbTransaction);
+
+        if (existing is not null)
+        {
+            dbTransaction.Rollback();
+
+            var sameRequest = existing.Network == network
+                && existing.PhoneNumber == phoneNumber.Trim()
+                && existing.Amount == amount;
+
+            return sameRequest
+                ? new BeginAirtimePurchaseResult(
+                    BuyAirtimeOutcome.Success, existing, account.Balance, IsReplay: true)
+                : new BeginAirtimePurchaseResult(BuyAirtimeOutcome.ClientReferenceReused);
         }
 
         if (account.AccountStatus != AccountStatus.Active)
@@ -66,17 +94,17 @@ public class AirtimePurchaseRepository : IAirtimePurchaseRepository
 
         var debit = new Transaction(
             account.Id, TransactionType.Debit, TransactionCategory.AirtimePurchase,
-            amount, $"Airtime {network} {phoneNumber}");
+            amount, $"Airtime {network} {phoneNumber}", null);
         await connection.ExecuteAsync(InsertTransactionSql, debit, dbTransaction);
 
-        var purchase = new AirtimePurchase(account.Id, network, phoneNumber, amount, requestId);
+        var purchase = new AirtimePurchase(account.Id, network, phoneNumber, amount, requestId, clientReference);
 
         const string insertPurchaseSql = """
             INSERT INTO AirtimePurchases
-            (Id, AccountId, Network, PhoneNumber, Amount, RequestId, Status,
+            (Id, AccountId, Network, PhoneNumber, Amount, RequestId, ClientReference, Status,
              ProviderReference, ProviderMessage, CreatedAt, UpdatedAt)
             VALUES
-            (@Id, @AccountId, @Network, @PhoneNumber, @Amount, @RequestId, @Status,
+            (@Id, @AccountId, @Network, @PhoneNumber, @Amount, @RequestId, @ClientReference, @Status,
              @ProviderReference, @ProviderMessage, @CreatedAt, @UpdatedAt);
             """;
         await connection.ExecuteAsync(insertPurchaseSql, purchase, dbTransaction);
@@ -139,7 +167,7 @@ public class AirtimePurchaseRepository : IAirtimePurchaseRepository
 
         var credit = new Transaction(
             account.Id, TransactionType.Credit, TransactionCategory.AirtimePurchase,
-            purchase.Amount, $"Refund: airtime {purchase.Network} {purchase.PhoneNumber}");
+            purchase.Amount, $"Refund: airtime {purchase.Network} {purchase.PhoneNumber}", null);
         await connection.ExecuteAsync(InsertTransactionSql, credit, dbTransaction);
 
         dbTransaction.Commit();
